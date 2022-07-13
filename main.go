@@ -1,6 +1,7 @@
 package main
 
 import (
+	"CrawlFileSystem/models"
 	"bytes"
 	"encoding/json"
 	"flag"
@@ -14,19 +15,19 @@ import (
 	"time"
 )
 
-var wg sync.WaitGroup
-var URL = ""
+var tasks sync.WaitGroup
+var GLOBALARGUMENTS = &models.CommandLineArgument{}
 
 func main() {
-	baseDirector := ""
-
 	println("Started")
-	flag.StringVar(&baseDirector, "base", "jk", "help message for flagname")
-	flag.StringVar(&URL, "url", "https://localhost:7124/Files/", "Missing API Url")
 
+	flag.StringVar(&GLOBALARGUMENTS.BaseSystemDirector, "base", "", "help message for flagname")
+	flag.StringVar(&GLOBALARGUMENTS.ApiUrl, "url", "", "Missing API Url")
+	GLOBALARGUMENTS.TimeBetweenRequest = *flag.Duration("timeBetweenRequest", 20, "Missing Time Between Request")
 	flag.Parse()
-	iterate(baseDirector)
-	wg.Wait()
+
+	iterate(GLOBALARGUMENTS.BaseSystemDirector)
+	tasks.Wait()
 
 	println("Complete")
 }
@@ -35,32 +36,21 @@ func iterate(path string) {
 	filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return filepath.SkipDir
-			//log.Fatalf(err.Error())
-
 		}
 
-		var request = FilesRequest{
-			Name:        info.Name(),
-			Location:    path2.Join(path, info.Name()),
-			Description: "",
-			Extension:   path2.Ext(info.Name()),
-			CreatedOn:   time.Now(),
-		}
-		wg.Add(1)
-		go func(r FilesRequest) {
-			// Decrement the counter when the go routine completes
-			defer wg.Done()
-			// Call the function check
+		var request = *models.NewFileRequest(info.Name(), path2.Join(path, info.Name()), path2.Ext(info.Name()))
+		tasks.Add(1)
+		go func(r models.FilesRequest) {
+			defer tasks.Done()
 			LogFile(r)
 		}(request)
 
-		fmt.Printf("File Name: %s\n", info.Name())
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(GLOBALARGUMENTS.TimeBetweenRequest * time.Millisecond)
 		return nil
 	})
 }
 
-func LogFile(request FilesRequest) {
+func LogFile(request models.FilesRequest) {
 
 	method := "POST"
 
@@ -71,7 +61,7 @@ func LogFile(request FilesRequest) {
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(method, URL, &buf)
+	req, err := http.NewRequest(method, GLOBALARGUMENTS.ApiUrl, &buf)
 
 	if err != nil {
 		fmt.Println(err)
