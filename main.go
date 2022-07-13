@@ -15,14 +15,20 @@ import (
 )
 
 var wg sync.WaitGroup
+var URL = ""
 
 func main() {
 	baseDirector := ""
 
+	println("Started")
 	flag.StringVar(&baseDirector, "base", "jk", "help message for flagname")
+	flag.StringVar(&URL, "url", "https://localhost:7124/Files/", "Missing API Url")
+
 	flag.Parse()
 	iterate(baseDirector)
 	wg.Wait()
+
+	println("Complete")
 }
 
 func iterate(path string) {
@@ -55,7 +61,7 @@ func iterate(path string) {
 }
 
 func LogFile(request FilesRequest) {
-	url := "https://localhost:7124/Files/"
+
 	method := "POST"
 
 	var buf bytes.Buffer
@@ -65,7 +71,7 @@ func LogFile(request FilesRequest) {
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(method, url, &buf)
+	req, err := http.NewRequest(method, URL, &buf)
 
 	if err != nil {
 		fmt.Println(err)
