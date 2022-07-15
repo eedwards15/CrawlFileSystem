@@ -24,8 +24,8 @@ func main() {
 	flag.StringVar(&GLOBALARGUMENTS.BaseSystemDirector, "base", "", "help message for flagname")
 	flag.StringVar(&GLOBALARGUMENTS.ApiUrl, "url", "", "Missing API Url")
 	GLOBALARGUMENTS.TimeBetweenRequest = *flag.Duration("timeBetweenRequest", 20, "Missing Time Between Request")
-	flag.Parse()
 
+	flag.Parse()
 	iterate(GLOBALARGUMENTS.BaseSystemDirector)
 	tasks.Wait()
 
@@ -38,7 +38,7 @@ func iterate(path string) {
 			return filepath.SkipDir
 		}
 
-		var request = *models.NewFileRequest(info.Name(), path2.Join(path, info.Name()), path2.Ext(info.Name()))
+		var request = *models.NewFileRequest(info.Name(), path, path2.Ext(info.Name()))
 		tasks.Add(1)
 		go func(r models.FilesRequest) {
 			defer tasks.Done()
